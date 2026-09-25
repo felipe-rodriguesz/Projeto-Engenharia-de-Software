@@ -56,9 +56,11 @@ class TestAvaliadorPerfilRisco(unittest.TestCase):
             self.avaliador.calcular_perfil(['a', 'b', 'c', 'd'])
 
     def test_calcular_perfil_falha_tipo_errado(self):
-        """Testa a falha forçada ao enviar tipos numéricos em vez de strings, aguardando um AttributeError."""
-        with self.assertRaises(AttributeError):
-            self.avaliador.calcular_perfil([1, 2, 3])
+        """Rejeita opções e tipos que não pertencem ao questionário."""
+        for respostas in (["a", "x", "c"], ["a", "b", "1"], [1, 2, 3]):
+            with self.subTest(respostas=respostas):
+                with self.assertRaises(ValueError):
+                    self.avaliador.calcular_perfil(respostas)
 
 if __name__ == '__main__':
     unittest.main()

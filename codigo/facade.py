@@ -77,12 +77,14 @@ class InvestPlanFacade:
             patrimonio_projetado=patrimonio_futuro
         )
 
-        self.gerenciador_dados.salvar_sessao_completa(
+        dados_salvos = self.gerenciador_dados.salvar_sessao_completa(
             renda=renda,
             despesas=despesas,
             perfil=perfil_definido,
             alocacao=alocacao_final
         )
+        if not dados_salvos:
+            raise RuntimeError("Não foi possível salvar os dados da simulação.")
         
         self.gerador_relatorio.gerar_txt(resultado)
 

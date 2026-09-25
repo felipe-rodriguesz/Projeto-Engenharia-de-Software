@@ -54,6 +54,9 @@ class AvaliadorPerfilRisco:
         if not respostas or len(respostas) != 3:
             raise ValueError("O questionário exige exatamente 3 respostas para calcular o perfil.")
 
+        if any(not isinstance(resp, str) or resp.strip().lower() not in {"a", "b", "c"} for resp in respostas):
+            raise ValueError("As respostas do questionário devem ser a, b ou c.")
+
         r1, r2, r3 = [resp.lower().strip() for resp in respostas]
 
         if r1 == 'a' or r2 == 'a':

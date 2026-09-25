@@ -1,3 +1,4 @@
+import math
 from typing import Dict
 
 class GerenciadorOrcamento:
@@ -6,8 +7,8 @@ class GerenciadorOrcamento:
     o balanço orçamentário e a capacidade de poupança do usuário.
     """
     def __init__(self, renda_bruta: float) -> None:
-        if renda_bruta <= 0:
-            raise ValueError("A renda bruta inicial deve ser maior que zero.")
+        if not math.isfinite(renda_bruta) or renda_bruta <= 0:
+            raise ValueError("A renda bruta inicial deve ser finita e maior que zero.")
         self._renda_bruta: float = renda_bruta
         self._despesas: Dict[str, float] = {}
 
@@ -15,9 +16,12 @@ class GerenciadorOrcamento:
         categoria_limpa = categoria.strip().lower()
         if not categoria_limpa:
             raise ValueError("A categoria da despesa não pode estar vazia.")
-        if valor <= 0:
-            raise ValueError("O valor da despesa deve ser maior que zero.")
-        self._despesas[categoria_limpa] = valor
+        if not math.isfinite(valor) or valor <= 0:
+            raise ValueError("O valor da despesa deve ser finito e maior que zero.")
+        total_categoria = self._despesas.get(categoria_limpa, 0.0) + valor
+        if not math.isfinite(total_categoria):
+            raise ValueError("O total da categoria deve ser finito.")
+        self._despesas[categoria_limpa] = total_categoria
 
     def obter_despesas(self) -> Dict[str, float]:
         return self._despesas.copy()

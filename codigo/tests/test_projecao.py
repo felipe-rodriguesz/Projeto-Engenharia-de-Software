@@ -52,5 +52,17 @@ class TestSimuladorProjecao(unittest.TestCase):
         
         self.assertGreater(patrimonio_longo, 100 * 12 * 50) 
 
+    def test_rejeita_aportes_nao_finitos(self):
+        for valor in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(valor=valor):
+                with self.assertRaises(ValueError):
+                    self.simulador.calcular_patrimonio_futuro({"Renda Fixa Curto Prazo": valor}, anos=1)
+
+    def test_rejeita_prazo_nao_finito(self):
+        for anos in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(anos=anos):
+                with self.assertRaises(ValueError):
+                    self.simulador.calcular_patrimonio_futuro({"Renda Fixa Curto Prazo": 100.0}, anos=anos)
+
 if __name__ == "__main__":
     unittest.main()

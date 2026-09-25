@@ -1,3 +1,4 @@
+import math
 from typing import Dict
 
 class SimuladorProjecao:
@@ -13,13 +14,15 @@ class SimuladorProjecao:
         }
 
     def calcular_patrimonio_futuro(self, alocacao_mensal: Dict[str, float], anos: int) -> float:
-        if anos <= 0:
+        if not isinstance(anos, (int, float)) or not math.isfinite(anos) or anos <= 0:
             raise ValueError("O período para projeção deve ser de pelo menos 1 ano.")
         
         meses_totais = anos * 12
         patrimonio_total = 0.0
 
         for ativo, aporte_mensal in alocacao_mensal.items():
+            if not math.isfinite(aporte_mensal):
+                raise ValueError("Os aportes mensais devem ser valores finitos.")
             if aporte_mensal <= 0:
                 continue
                 
@@ -27,6 +30,7 @@ class SimuladorProjecao:
             saldo_ativo = 0.0
             
             for _ in range(meses_totais):
+                # Cada aporte mensal recebe rendimento no mesmo ciclo, conforme a fórmula do protótipo.
                 saldo_ativo = (saldo_ativo + aporte_mensal) * (1 + taxa)
                 
             patrimonio_total += saldo_ativo

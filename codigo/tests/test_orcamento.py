@@ -54,5 +54,22 @@ class TestGerenciadorOrcamento(unittest.TestCase):
         
         self.assertAlmostEqual(orcamento.calcular_sobra_liquida(), 1000.04, places=2)
 
+    def test_categoria_repetida_soma_valores(self):
+        orcamento = GerenciadorOrcamento(renda_bruta=5000.0)
+        orcamento.adicionar_despesa(" Mercado ", 100.0)
+        orcamento.adicionar_despesa("mercado", 50.0)
+
+        self.assertEqual(orcamento.obter_despesas()["mercado"], 150.0)
+
+    def test_rejeita_renda_e_despesas_nao_finitas(self):
+        for valor in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(valor=valor):
+                with self.assertRaises(ValueError):
+                    GerenciadorOrcamento(renda_bruta=valor)
+
+                orcamento = GerenciadorOrcamento(renda_bruta=1000.0)
+                with self.assertRaises(ValueError):
+                    orcamento.adicionar_despesa("Contas", valor)
+
 if __name__ == "__main__":
     unittest.main()

@@ -37,7 +37,7 @@ class GeradorRelatorio:
         ]
 
         for ativo, valor in resultado_simulacao.alocacao.items():
-            linhas.append(f"  * {ativo}: R$ {valor:.2f}")
+            linhas.append(f"  * {ativo}: R$ {formatar_br(valor)}")
             
         linhas.append("-" * 50)
         linhas.append(f"Projeção do Patrimônio em {resultado_simulacao.anos_projecao} anos: R$ {formatar_br(resultado_simulacao.patrimonio_projetado)}")

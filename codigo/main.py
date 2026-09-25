@@ -36,7 +36,7 @@ def iniciar_sistema() -> None:
         if opcao == "1":
             cli_utils.exibir_titulo("NOVA SIMULAÇÃO")
             try:
-                renda = float(input("Digite sua renda bruta mensal (R$): "))
+                renda = cli_utils.ler_float_obrigatorio("Digite sua renda bruta mensal (R$): ")
                 
                 despesas = {}
                 print("\n--- Cadastro de Despesas ---")
@@ -45,8 +45,9 @@ def iniciar_sistema() -> None:
                     categoria = input("Categoria da despesa (ex: Aluguel, Mercado): ").strip()
                     if not categoria:
                         break 
-                    valor_despesa = float(input(f"Valor para '{categoria}' (R$): "))
-                    despesas[categoria] = valor_despesa
+                    valor_despesa = cli_utils.ler_float_obrigatorio(f"Valor para '{categoria}' (R$): ")
+                    categoria_normalizada = categoria.strip().lower()
+                    despesas[categoria_normalizada] = despesas.get(categoria_normalizada, 0.0) + valor_despesa
 
                 perguntas = facade.obter_perguntas_risco()
                 respostas = []
@@ -55,11 +56,11 @@ def iniciar_sistema() -> None:
                     print(f"\n{p.id}. {p.enunciado}")
                     for letra, texto in p.opcoes.items():
                         print(f"  {letra}) {texto}")
-                    resp = input("Sua resposta (a/b/c): ").lower().strip()
+                    resp = cli_utils.ler_opcao("Sua resposta (a/b/c): ", list(p.opcoes))
                     respostas.append(resp)
                 
                 print("\n--- Projeção de Patrimônio ---")
-                anos_projecao = int(input("Para quantos anos deseja projetar seus investimentos? (ex: 10): "))
+                anos_projecao = cli_utils.ler_int_positivo("Para quantos anos deseja projetar seus investimentos? (ex: 10): ")
                 
                 resultado_dto = facade.processar_simulacao_completa(
                     renda=renda, 
@@ -109,7 +110,8 @@ def iniciar_sistema() -> None:
                             for par in pares:
                                 if ":" in par:
                                     cat, val = par.split(":")
-                                    despesas_csv[cat.strip()] = float(val)
+                                    categoria_normalizada = cat.strip().lower()
+                                    despesas_csv[categoria_normalizada] = despesas_csv.get(categoria_normalizada, 0.0) + float(val)
                                     
                         try:
                             resultado_dto = facade.processar_simulacao_completa(
