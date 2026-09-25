@@ -1,6 +1,6 @@
 # Estratégia de Testes Automatizados — InvestPlan
 
-> Este documento atende aos requisitos da **Sprint 4** da disciplina de Engenharia de Software. Aqui registramos nossa abordagem para garantir a qualidade matemática e a robustez do núcleo do sistema, bem como a cobertura e as lacunas deixadas.
+> Este documento registra a estratégia acadêmica de testes e a cobertura existente no repositório. As tabelas abaixo descrevem os casos atualmente implementados, não uma cobertura planejada.
 
 ---
 
@@ -11,43 +11,43 @@ Para a suíte de testes do InvestPlan, optamos pela biblioteca nativa do Python 
 - **Integração direta com a linguagem**, sem exigir dependências externas;
 - **Forte adequação ao padrão de testes orientados a objetos** (xUnit).
 
-O foco da nossa abordagem foi o **Teste de Caixa Branca** isolado nas regras de negócio (*Domain Layer*). O objetivo principal foi garantir a testabilidade das funções matemáticas puras e dos algoritmos de classificação do sistema. Ao isolar o núcleo da aplicação da interface de usuário, garantimos que os testes rodem em milissegundos e validem estritamente a lógica financeira do projeto.
+Os testes são testes unitários de caixa branca para partes do núcleo de negócio. Eles validam os casos enumerados abaixo; não cobrem o fluxo completo nem garantem por si só a confiabilidade financeira do sistema.
 
 ---
 
-## 2. Cobertura e Prevenção de Falhas Críticas
+## 2. Cobertura atual
 
-A divisão da cobertura foi realizada para blindar os módulos críticos de decisão e cálculo do software. Para cada classe testada, aplicamos a **tríade de validação**: Sucesso, Borda e Falha.
+Os casos existentes incluem cenários de sucesso, borda e falha em diferentes proporções por módulo.
 
 ### `motor_investimento.py` — Felipe
 
 | Tipo | Descrição |
 |------|-----------|
-| ✅ Sucesso | Validação da distribuição percentual correta da carteira com base nos perfis de risco. |
-| ⚠️ Borda | Comportamento do motor com valores de investimento muito baixos (frações de centavos). |
-| ❌ Falha | Bloqueio de envio de dados incompatíveis ou valores nulos. |
+| ✅ Sucesso | Distribuição da estratégia arrojada para aporte de R$ 1.000,00. |
+| ⚠️ Borda | Rejeição de sobra igual a zero. |
+| ❌ Falha | Tipo de entrada incompatível (texto). |
 
 ### `orcamento.py` e `projecao.py` — Guilherme
 
 | Tipo | Descrição |
 |------|-----------|
-| ✅ Sucesso | Cálculo preciso de sobras orçamentárias e juros compostos ao longo do tempo. |
-| ⚠️ Borda | Simulações com taxa de juros zerada ou meses de projeção equivalentes a zero. |
-| ❌ Falha | Tratamento de despesas maiores que a receita (saldo negativo) e prevenção de divisão por zero. |
+| ✅ Sucesso | Soma de despesas e cálculo da sobra; projeção por um ano. |
+| ⚠️ Borda | Despesas iguais à renda, valores com centavos, aportes zerados/negativos e prazo de 50 anos. |
+| ❌ Falha | Renda ou despesa inválida e prazo de projeção menor ou igual a zero. |
 
 ### `perfil_risco.py` — Elder
 
 | Tipo | Descrição |
 |------|-----------|
-| ✅ Sucesso | Validação do caminho feliz para as classificações de **Conservador**, **Moderado** e **Arrojado**. |
-| ⚠️ Borda | Teste dos limites matemáticos exatos de transição entre perfis (ex: nota-limite entre Moderado e Arrojado) e acionamento da regra de negócio de *Fail-Fast* para aversão a risco. |
-| ❌ Falha | Disparo de `ValueError` e `AttributeError` via injeção de listas vazias, quantidades incorretas de respostas e tipos de dados incompatíveis. |
+| ✅ Sucesso | Classificação conservadora, moderada e arrojada. |
+| ⚠️ Borda | Regra *fail-fast* nas duas primeiras respostas, limite entre perfis e normalização de maiúsculas/espaços. |
+| ❌ Falha | Lista vazia, quantidade incorreta de respostas e tipos incompatíveis. |
 
 ---
 
 ## 3. Lacunas Não Cobertas e Tratamento de Exceções
 
-Para esta Sprint, tomamos a **decisão arquitetural consciente** de não realizar testes automatizados nas camadas de Interface do Usuário (CLI) e de Persistência de Dados (File I/O).
+Não há testes automatizados para a interface CLI, fachada, persistência de dados ou geração de relatório.
 
 ### Camada CLI — `main.py`
 
@@ -59,9 +59,4 @@ A geração de arquivos `.txt` (como o `plano_investplan.txt`) não é coberta p
 
 ### Justificativa e Mitigação
 
-Para suprir a ausência de testes automatizados na manipulação de arquivos, adotamos duas técnicas no código de produção:
-
-1. **Tratamento de exceções robusto** via `try/except`;
-2. **Escrita atômica**: o sistema gera um arquivo temporário (`.tmp`) durante a escrita do relatório e só o substitui via `os.replace()` em caso de sucesso absoluto.
-
-Essa abordagem mitiga os riscos de corrupção de arquivos em caso de falha de hardware, sem a necessidade de simular esses eventos extremos via testes automatizados.
+O relatório usa gravação por arquivo temporário seguido de `os.replace()`. Essa implementação não substitui testes de I/O e não se aplica à persistência JSON, que grava diretamente no arquivo.

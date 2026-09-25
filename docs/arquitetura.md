@@ -165,45 +165,41 @@ O padrão estrutural **Facade** (Fachada), foi adotado como o ponto central de c
 > O terminal (CLI) simplesmente entrega os dados brutos ao Gerente (a nossa Facade). A Facade vai para os bastidores, orquestra todas essas lógicas matemáticas de forma invisível e apenas devolve o diagnóstico e o plano de ação mastigado e formatado de volta para a tela.
 
 * **Problema a ser resolvido:** A Camada de Interface precisa gerenciar múltiplos menus (Orçamento, Questionário de Risco, Simulação de Alocação) e disparar chamadas para diversas regras de negócio diferentes. Se a lógica da CLI fizesse chamadas diretas a todas as classes do Core, o código da interface ficaria altamente acoplado à implementação das classes de negócio. Qualquer mudança em um método financeiro exigiria alterar a tela do terminal.
-* **Solução e Classes Reais:** Criamos a classe `InvestPlanFacade`. Ela expõe métodos de alto nível para o loop do terminal (como `orquestrar_fluxo_orcamento()` ou `gerar_diagnostico_completo()`). Por trás dos panos, o Facade instancia as classes de negócio do Core, passa os parâmetros, consolida as respostas do motor econômico e devolve os dados mastigados para a CLI apenas exibir.
+* **Solução e Classes Reais:** A classe `InvestPlanFacade` expõe `obter_perguntas_risco()` e `processar_simulacao_completa()`. O segundo método coordena orçamento, avaliação de risco, alocação, projeção, persistência e geração do relatório, retornando um `ResultadoSimulacao` definido no próprio módulo `facade.py`.
 * **Benefício Arquitetural:** Alto desacoplamento (Princípio de Segregação de Interfaces). A CLI conversa apenas com o Facade. Se no futuro o InvestPlan migrar de terminal (CLI) para a Web (FastAPI/Django), o Core e as telas não sofrerão impactos; bastará plugar a nova interface na mesma Fachada (`InvestPlanFacade`).
 
 ### 4.2.1 Diagrama de Classes UML (Facade)
 
 ```mermaid
 classDiagram
-    class MenuTerminal {
-        +iniciar_sistema() void
-        -exibir_menu_principal() void
-        -capturar_opcao() int
-    }
     class InvestPlanFacade {
-        -_gerenciador_orcamento: GerenciadorOrcamento
-        -_avaliador_risco: AvaliadorRisco
-        -_contexto_alocacao: ContextoAlocacao
-        +processar_orcamento(dados: dict) dict
-        +avaliar_perfil(respostas: list) string
-        +calcular_investimentos(sobra: float, perfil: string) dict
+        +obter_perguntas_risco() list
+        +processar_simulacao_completa(renda, despesas, respostas_risco, anos_projecao) ResultadoSimulacao
     }
-    class GerenciadorOrcamento {
-        +validar_renda(bruta: float) bool
-        +calcular_liquida(bruta: float, tipo: string) float
+    class ResultadoSimulacao {
+        +renda_bruta: float
+        +total_despesas: float
+        +sobra_mensal: float
+        +perfil: str
+        +alocacao: dict
+        +anos_projecao: int
+        +patrimonio_projetado: float
     }
-    class AvaliadorRisco {
-        +computar_score(respostas: list) string
-    }
-
-    MenuTerminal --> InvestPlanFacade : usa_unicamente
-    InvestPlanFacade --> GerenciadorOrcamento : orquestra
-    InvestPlanFacade --> AvaliadorRisco : orquestra
+    InvestPlanFacade --> GerenciadorOrcamento : usa
+    InvestPlanFacade --> AvaliadorPerfilRisco : usa
+    InvestPlanFacade --> ContextoAlocacao : usa
+    InvestPlanFacade --> SimuladorProjecao : usa
+    InvestPlanFacade --> GerenciadorDados : usa
+    InvestPlanFacade --> GeradorRelatorio : usa
+    InvestPlanFacade --> ResultadoSimulacao : retorna
 ```
 
 ### 4.3 Padrão Creacional: Singleton (Responsável: Guilherme)
 O padrão de projeto creacional **Singleton** foi escolhido para centralizar e coordenar de forma isolada o ciclo de vida e o acesso à camada de armazenamento de dados do InvestPlan, residindo integralmente no módulo de infraestrutura `persistencia.py`.
 
-* **Problema a ser resolvido:** O sistema utiliza um arquivo local estruturado (`dados_usuario.json`) para gravar o estado das finanças e o perfil do usuário. Caso múltiplas partes do sistema instanciassem objetos diferentes de persistência de forma concorrente em memória, haveria o risco iminente de condições de corrida (*race conditions*), concorrência de escrita e dessincronização de dados, corrompendo o arquivo físico síncrono.
+* **Escopo atual:** O sistema usa um arquivo local `codigo/dados_usuario.json` para gravar a última sessão. O padrão Singleton mantém uma instância de `GerenciadorDados` por processo; não implementa sincronização entre processos nem garante segurança para gravações concorrentes.
 * **Solução e Classes Reais:** Criamos uma classe gerenciadora independente chamada `GerenciadorDados` dentro do arquivo `persistencia.py` que restringe sua própria instanciação. Através da sobreposição do método construtor interno (`__new__`), a classe verifica se uma instância já existe em memória; se sim, reaproveita-a, caso contrário, cria uma única referência global para as operações de I/O.
-* **Benefício Arquitetural:** Garante um ponto único de acesso global aos dados persistidos, assegurando a integridade referencial do estado da aplicação durante toda a sessão de execução e blindando o sistema contra criação redundante de objetos em memória, além de isolar completamente os detalhes de infraestrutura do restante do sistema.
+* **Benefício Arquitetural:** Centraliza o acesso à persistência durante a execução e evita a criação de várias instâncias do gerenciador no mesmo processo. A gravação JSON é direta, não atômica.
 
 ### 4.3.1 Diagrama de Classes UML (Singleton)
 
@@ -213,7 +209,7 @@ classDiagram
         -_instancia: GerenciadorDados$
         -_caminho_arquivo: str
         -GerenciadorDados()
-        +get_instancia() GerenciadorDados$
+        +__new__() GerenciadorDados
         +carregar_dados() dict
         +salvar_dados(dados: dict) bool
     }
@@ -226,4 +222,4 @@ classDiagram
 
 **`_caminho_arquivo`:** Atributo de instância privado do tipo string que armazena o local do arquivo físico (dados_usuario.json) no disco.
 
-**`get_instancia()` / Construtor __new__:** Mecanismos de controle de ciclo de vida que interceptam a criação do objeto em Python, aplicando a validação lógica que bloqueia a duplicação e disponibiliza os métodos de leitura (carregar_dados) e salvamento físico (salvar_dados).
+**Construtor `__new__`:** Intercepta a criação do objeto e devolve a instância armazenada na classe. Os métodos `carregar_dados()`, `salvar_dados()` e `salvar_sessao_completa()` realizam as operações disponíveis; não existe um método público `get_instancia()`.

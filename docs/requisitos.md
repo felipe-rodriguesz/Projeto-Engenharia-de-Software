@@ -5,6 +5,8 @@
 > - **Felipe** → Seção 2 (Histórias de Usuário)
 > - **Guilherme** → Seção 3 (Validação)
 
+> **Nota sobre o escopo implementado:** Este arquivo preserva os requisitos, hipóteses e protótipos levantados durante o trabalho acadêmico; nem todos foram implementados. A versão atual recebe renda bruta, despesas em categorias livres, três respostas de risco e um prazo de projeção. Não calcula descontos CLT/PJ, não exige oito categorias e não aplica os limites de renda descritos nas RN-01 a RN-04. O fluxo de CLI e o exemplo da seção 3.4 são propostas de requisito, não uma transcrição da interface atual. A RN-08 também diverge: a implementação usa taxas mensais fixas por classe de ativo, não uma taxa anual por perfil. Consulte o README para o comportamento atual.
+
 ---
 
 ## 1. Síntese da Elicitação
@@ -48,7 +50,7 @@
 
 **RN-07:** A alocação da poupança seguirá proporções fixas baseadas no perfil do usuário. Para o perfil Conservador: 100% em Renda Fixa (sendo 70% Curto Prazo e 30% Longo Prazo).
 
-**RN-08:** O cálculo de projeção de patrimônio utilizará a fórmula de juros compostos com aportes mensais constantes, assumindo uma taxa de retorno anual simulada atrelada ao perfil de risco.
+**RN-08 (requisito original):** O cálculo de projeção de patrimônio utilizará a fórmula de juros compostos com aportes mensais constantes, assumindo uma taxa de retorno anual simulada atrelada ao perfil de risco. A implementação atual usa taxas mensais fixas por classe de ativo, conforme descrito no README.
 
 ---
 
@@ -194,6 +196,8 @@
 | CONF-02 | HU-01 vs RN-05 | A HU-01 (CA-01) estipula que o sistema deve solicitar diretamente a renda líquida. Contudo, a RN-04 determina que o usuário insere a renda bruta e o sistema calcula a líquida com base nos descontos fiscais. Além disso, a HU-01 (CA-04) bloqueia o avanço se a sobra for <= 0$, enquanto a RN-05 apenas classifica como "Déficit Orçamentário". | Ficou adotado o fluxo do protótipo (Seção 3.4): a CLI solicitará a renda bruta (conforme RN-04) e aplicará o cálculo automático. O bloqueio total de avanço só ocorrerá se a sobra final calculada for >= 0$ (em estrito cumprimento da RN-05). Se a sobra for positiva, mas abaixo de 10% da renda líquida, o sistema emitirá um alerta preventivo de baixa poupança, mas permitirá prosseguir.|
 
 ### 3.3 Questões em Aberto
+
+As questões abaixo foram registradas durante a elicitação. QA-02 foi decidida na implementação com taxas mensais fixas em `projecao.py`; QA-01 e QA-03 permanecem fora do fluxo implementado.
 
 | ID | Descrição da questão | Impacto | Responsável | Prazo |
 |---|---|---|---|---|
